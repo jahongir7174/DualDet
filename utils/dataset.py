@@ -6,185 +6,17 @@ from os.path import basename
 import cv2
 import mmcv
 import numpy
-from PIL import Image, ImageOps, ImageEnhance
 from mmdet.datasets import DATASETS, CocoDataset
 from mmdet.datasets.pipelines.compose import Compose, PIPELINES
 
-max_value = 10.
-
 
 def resample():
-    return random.choice((Image.BILINEAR, Image.BICUBIC))
-
-
-def rotate(image, magnitude):
-    magnitude = (magnitude / max_value) * 45.0
-
-    if random.random() > 0.5:
-        magnitude *= -1
-
-    return image.rotate(magnitude, resample=resample())
-
-
-def shear_x(image, magnitude):
-    magnitude = (magnitude / max_value) * 0.30
-
-    if random.random() > 0.5:
-        magnitude *= -1
-
-    return image.transform(image.size, Image.AFFINE, (1, magnitude, 0, 0, 1, 0), resample=resample())
-
-
-def shear_y(image, magnitude):
-    magnitude = (magnitude / max_value) * 0.30
-
-    if random.random() > 0.5:
-        magnitude *= -1
-
-    return image.transform(image.size, Image.AFFINE, (1, 0, 0, magnitude, 1, 0), resample=resample())
-
-
-def translate_x(image, magnitude):
-    magnitude = (magnitude / max_value) * 0.45
-
-    if random.random() > 0.5:
-        magnitude *= -1
-
-    pixels = magnitude * image.size[0]
-    return image.transform(image.size, Image.AFFINE, (1, 0, pixels, 0, 1, 0), resample=resample())
-
-
-def translate_y(image, magnitude):
-    magnitude = (magnitude / max_value) * 0.45
-
-    if random.random() > 0.5:
-        magnitude *= -1
-
-    pixels = magnitude * image.size[1]
-    return image.transform(image.size, Image.AFFINE, (1, 0, 0, 0, 1, pixels), resample=resample())
-
-
-def equalize(image, _):
-    return ImageOps.equalize(image)
-
-
-def invert(image, _):
-    return ImageOps.invert(image)
-
-
-def identity(image, _):
-    return image
-
-
-def normalize(image, _):
-    return ImageOps.autocontrast(image)
-
-
-def brightness(image, magnitude):
-    if random.random() > 0.5:
-        magnitude = (magnitude / max_value) * 1.8 + 0.1
-        return ImageEnhance.Brightness(image).enhance(magnitude)
-    else:
-        magnitude = (magnitude / max_value) * 0.9
-
-        if random.random() > 0.5:
-            magnitude *= -1
-
-        return ImageEnhance.Brightness(image).enhance(magnitude)
-
-
-def color(image, magnitude):
-    if random.random() > 0.5:
-        magnitude = (magnitude / max_value) * 1.8 + 0.1
-        return ImageEnhance.Color(image).enhance(magnitude)
-    else:
-        magnitude = (magnitude / max_value) * 0.9
-
-        if random.random() > 0.5:
-            magnitude *= -1
-
-        return ImageEnhance.Color(image).enhance(magnitude)
-
-
-def contrast(image, magnitude):
-    if random.random() > 0.5:
-        magnitude = (magnitude / max_value) * 1.8 + 0.1
-        return ImageEnhance.Contrast(image).enhance(magnitude)
-    else:
-        magnitude = (magnitude / max_value) * 0.9
-
-        if random.random() > 0.5:
-            magnitude *= -1
-
-        return ImageEnhance.Contrast(image).enhance(magnitude)
-
-
-def sharpness(image, magnitude):
-    if random.random() > 0.5:
-        magnitude = (magnitude / max_value) * 1.8 + 0.1
-        return ImageEnhance.Sharpness(image).enhance(magnitude)
-    else:
-        magnitude = (magnitude / max_value) * 0.9
-
-        if random.random() > 0.5:
-            magnitude *= -1
-
-        return ImageEnhance.Sharpness(image).enhance(magnitude)
-
-
-def solar(image, magnitude):
-    magnitude = int((magnitude / max_value) * 256)
-    if random.random() > 0.5:
-        return ImageOps.solarize(image, magnitude)
-    else:
-        return ImageOps.solarize(image, 256 - magnitude)
-
-
-def poster(image, magnitude):
-    magnitude = int((magnitude / max_value) * 4)
-    if random.random() > 0.5:
-        if magnitude >= 8:
-            return image
-        return ImageOps.posterize(image, magnitude)
-    else:
-        if random.random() > 0.5:
-            magnitude = 4 - magnitude
-        else:
-            magnitude = 4 + magnitude
-
-        if magnitude >= 8:
-            return image
-        return ImageOps.posterize(image, magnitude)
-
-
-@PIPELINES.register_module()
-class RandomMix:
-    def __init__(self, mean=1, sigma=0.5, n=3):
-        self.n = n
-        self.mean = mean
-        self.sigma = sigma
-        self.transform = (equalize, identity, invert, normalize,
-                          rotate, shear_x, shear_y, translate_x, translate_y,
-                          brightness, color, contrast, sharpness, solar, poster)
-
-    def __call__(self, results):
-        image = results['img']
-        image = mmcv.bgr2rgb(image)
-        image = Image.fromarray(image)
-
-        aug_image = image.copy()
-
-        for transform in numpy.random.choice(self.transform, self.n):
-            magnitude = numpy.random.normal(self.mean, self.sigma)
-            magnitude = min(max_value, max(0., magnitude))
-            aug_image = transform(aug_image, magnitude)
-
-        alpha = random.random()
-        image = Image.blend(image, aug_image, alpha if alpha > 0.4 else alpha / 2)
-        image = mmcv.rgb2bgr(numpy.asarray(image))
-
-        results['img'] = image
-        return results
+    methods = (cv2.INTER_AREA,
+               cv2.INTER_CUBIC,
+               cv2.INTER_LINEAR,
+               cv2.INTER_NEAREST,
+               cv2.INTER_LANCZOS4)
+    return random.choice(seq=methods)
 
 
 @PIPELINES.register_module()
@@ -261,21 +93,21 @@ def resize(image, image_size):
     ratio = image_size / max(h, w)
     if ratio != 1:
         shape = (int(w * ratio), int(h * ratio))
-        image = cv2.resize(image, shape, interpolation=random.choice((0, 1, 2, 3)))
+        image = cv2.resize(image, shape, interpolation=resample())
     return image, image.shape[:2]
 
 
 def random_hsv(image):
     # HSV color-space augmentation
     r = numpy.random.uniform(-1, 1, 3) * [0.015, 0.7, 0.4] + 1
-    hue, sat, val = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
+    h, s, v = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
 
     x = numpy.arange(0, 256, dtype=r.dtype)
-    lut_hue = ((x * r[0]) % 180).astype('uint8')
-    lut_sat = numpy.clip(x * r[1], 0, 255).astype('uint8')
-    lut_val = numpy.clip(x * r[2], 0, 255).astype('uint8')
+    lut_h = ((x * r[0]) % 180).astype('uint8')
+    lut_s = numpy.clip(x * r[1], 0, 255).astype('uint8')
+    lut_v = numpy.clip(x * r[2], 0, 255).astype('uint8')
 
-    image_hsv = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val)))
+    image_hsv = cv2.merge((cv2.LUT(h, lut_h), cv2.LUT(s, lut_s), cv2.LUT(v, lut_v)))
     cv2.cvtColor(image_hsv, cv2.COLOR_HSV2BGR, dst=image)  # no return needed
 
 
@@ -530,35 +362,9 @@ def cut_mix(self, index1, index2):
     return None
 
 
-def process(self, data):
-    image = data['image']
-    label = data['label']
-    boxes = data['boxes']
-
-    shape = image.shape
-
-    results = dict()
-    results['filename'] = data['filename']
-    results['img_info'] = {'height': shape[0], 'width': shape[1]}
-    results['ann_info'] = {'labels': label, 'bboxes': boxes}
-    results['bbox_fields'] = []
-    results['mask_fields'] = []
-    results['ori_filename'] = basename(data['filename'])
-    results['img'] = image
-    results['img_fields'] = ['img']
-    results['img_shape'] = shape
-    results['ori_shape'] = shape
-    results['pad_shape'] = shape
-
-    results['scale_factor'] = numpy.array([1, 1, 1, 1], dtype=numpy.float32)
-    return self.pipeline(results)
-
-
 @DATASETS.register_module()
 class MOSAICDataset:
-    def __init__(self, dataset, image_sizes, pipeline, mix_p=0.0, cut_p=0.0):
-        self.mix_p = mix_p
-        self.cut_p = cut_p
+    def __init__(self, dataset, image_sizes, pipeline):
         self.dataset = dataset
         self.CLASSES = dataset.CLASSES
         self.pipeline = Compose(pipeline)
@@ -573,25 +379,42 @@ class MOSAICDataset:
 
     def __getitem__(self, index):
         while True:
-            if self.cut_p:
-                if random.random() > self.mix_p:
-                    data = mix_up(self, index, random.choice(self.indices))
-                else:
-                    data = cut_mix(self, index, random.choice(self.indices))
+            if random.random() < 0.25:
+                data = mosaic(self, index)
             else:
-                if random.random() > self.mix_p:
-                    data = mosaic(self, index)
-                else:
-                    data = mix_up(self, index, random.choice(self.indices))
+                data = mix_up(self, index, random.choice(self.indices))
 
             if data is None:
                 index = random.choice(self.indices)
                 continue
 
-            return process(self, data)
+            image = data['image']
+            label = data['label']
+            boxes = data['boxes']
+
+            shape = image.shape
+
+            results = dict()
+            results['filename'] = data['filename']
+            results['ann_info'] = {'labels': label, 'bboxes': boxes}
+            results['img_info'] = {'height': shape[0], 'width': shape[1]}
+            results['bbox_fields'] = []
+            results['mask_fields'] = []
+            results['ori_filename'] = basename(data['filename'])
+            results['img'] = image
+            results['img_fields'] = ['img']
+            results['img_shape'] = shape
+            results['ori_shape'] = shape
+            results['pad_shape'] = shape
+
+            results['scale_factor'] = numpy.array([1, 1, 1, 1], dtype=numpy.float32)
+            return self.pipeline(results)
 
 
 def build_dataset(cfg, default_args=None):
+    if cfg['type'] == 'RepeatDataset':
+        from mmdet.datasets import RepeatDataset
+        return RepeatDataset(build_dataset(cfg['dataset'], default_args), cfg['times'])
     if cfg['type'] == 'MOSAICDataset':
         import copy
         cp_cfg = copy.deepcopy(cfg)
