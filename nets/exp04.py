@@ -1,15 +1,15 @@
-# model settings, FasterRCNN
+# model settings, DualViT-T
 base = 'https://github.com/SwinTransformer/storage/releases/download/v1.0.0'
 ckpt = '{}/swin_tiny_patch4_window7_224.pth'.format(base)
-model = dict(type='FasterRCNN',
-             backbone=dict(type='SwinTransformer',
+model = dict(type='DualDet',
+             backbone=dict(type='DualViT',
                            embed_dims=96,
                            depths=[2, 2, 6, 2],
                            num_heads=[3, 6, 12, 24],
                            drop_path_rate=0.2,
                            convert_weights=True,
                            init_cfg=dict(type='Pretrained', checkpoint=ckpt)),
-             neck=dict(type='FPN',
+             neck=dict(type='DualFPN',
                        in_channels=[96, 192, 384, 768],
                        out_channels=256, num_outs=5),
              rpn_head=dict(type='RPNHead',
@@ -46,7 +46,7 @@ model = dict(type='FasterRCNN',
                             rpn_proposal=dict(nms_pre=2000,
                                               min_bbox_size=0,
                                               max_per_img=1000,
-                                              nms=dict(type='nms', iou_threshold=0.7), ),
+                                              nms=dict(type='nms', iou_threshold=0.7)),
                             rcnn=dict(assigner=dict(type='MaxIoUAssigner',
                                                     pos_iou_thr=0.5,
                                                     neg_iou_thr=0.5,

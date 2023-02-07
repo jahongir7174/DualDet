@@ -1,15 +1,15 @@
-# model settings, FasterRCNN
+# model settings, DualViT-T
 base = 'https://github.com/SwinTransformer/storage/releases/download/v1.0.0'
 ckpt = '{}/swin_tiny_patch4_window7_224.pth'.format(base)
-model = dict(type='FasterRCNN',
-             backbone=dict(type='SwinTransformer',
+model = dict(type='DualDet',
+             backbone=dict(type='DualViT',
                            embed_dims=96,
                            depths=[2, 2, 6, 2],
                            num_heads=[3, 6, 12, 24],
                            drop_path_rate=0.2,
                            convert_weights=True,
                            init_cfg=dict(type='Pretrained', checkpoint=ckpt)),
-             neck=dict(type='FPN',
+             neck=dict(type='DualFPN',
                        in_channels=[96, 192, 384, 768],
                        out_channels=256, num_outs=5),
              rpn_head=dict(type='RPNHead',
@@ -46,7 +46,7 @@ model = dict(type='FasterRCNN',
                             rpn_proposal=dict(nms_pre=2000,
                                               min_bbox_size=0,
                                               max_per_img=1000,
-                                              nms=dict(type='nms', iou_threshold=0.7), ),
+                                              nms=dict(type='nms', iou_threshold=0.7)),
                             rcnn=dict(assigner=dict(type='MaxIoUAssigner',
                                                     pos_iou_thr=0.5,
                                                     neg_iou_thr=0.5,
@@ -66,20 +66,16 @@ model = dict(type='FasterRCNN',
                            rcnn=dict(score_thr=0.05,
                                      max_per_img=100,
                                      nms=dict(type='nms', iou_threshold=0.5))))
-# dataset settings
+# dataset settings, MOSAIC, MixUp
 dataset_type = 'CocoDataset'
 data_root = '../Dataset/COCO/'
 samples_per_gpu = 4
 workers_per_gpu = 8
 image_norm = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-train_pipeline = [dict(type='LoadImageFromFile', to_float32=False, color_type='color'),
-                  dict(type='LoadAnnotations', with_bbox=True, with_mask=False),
-                  dict(type='Resize',
-                       img_scale=[(1333, 640), (1333, 800)],
-                       multiscale_mode='range', keep_ratio=True),
+train_pipeline = [dict(type='LoadAnnotations', with_bbox=True),
                   dict(type='RandomFlip', flip_ratio=0.5),
-                  dict(type='Normalize', **image_norm),
                   dict(type='Pad', size_divisor=32),
+                  dict(type='Normalize', **image_norm),
                   dict(type='DefaultFormatBundle'),
                   dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels'])]
 test_pipeline = [dict(type='LoadImageFromFile'),
@@ -88,16 +84,19 @@ test_pipeline = [dict(type='LoadImageFromFile'),
                       flip=False,
                       transforms=[dict(type='Resize', keep_ratio=True),
                                   dict(type='RandomFlip'),
-                                  dict(type='Normalize', **image_norm),
                                   dict(type='Pad', size_divisor=32),
+                                  dict(type='Normalize', **image_norm),
                                   dict(type='ImageToTensor', keys=['img']),
                                   dict(type='Collect', keys=['img'])])]
 data = dict(samples_per_gpu=samples_per_gpu,
             workers_per_gpu=workers_per_gpu,
             train=dict(type='RepeatDataset', times=3,
-                       dataset=dict(type=dataset_type,
-                                    ann_file=data_root + 'annotation/train2017.json',
-                                    img_prefix=data_root + 'images/train2017/',
+                       dataset=dict(type='MOSAICDataset',
+                                    dataset=dict(type=dataset_type,
+                                                 ann_file=data_root + 'annotation/train2017.json',
+                                                 img_prefix=data_root + 'images/train2017/',
+                                                 pipeline=[dict(type='LoadImageFromFile')]),
+                                    image_sizes=tuple([1024]),
                                     pipeline=train_pipeline)),
             val=dict(type=dataset_type,
                      ann_file=data_root + 'annotation/val2017.json',
