@@ -15,18 +15,15 @@
 
 ### Results
 
-|   Detector   | Backbone | Neck | LR Schedule | Box mAP | Config |
-|:------------:|:--------:|:----:|:-----------:|--------:|-------:|
-| Faster R-CNN |  Swin-T  | FPN  |     1x      |       - |  exp01 |
-|   DualDet    |  Swin-T  | FPN  |     1x      |       - |  exp02 |
-|   DualDet    |  Swin-T  | FPN  |     1x      |       - |  exp03 |
+|   Detector   | Backbone | Neck | LR Schedule | Box mAP |                   Config |                                                                            Download |
+|:------------:|:--------:|:----:|:-----------:|--------:|-------------------------:|------------------------------------------------------------------------------------:|
+| Faster R-CNN |  Swin-T  | FPN  |     1x      |   42.86 | [exp01](./nets/exp01.py) | [model](https://github.com/jahongir7174/DualDet/releases/download/v0.0.1/exp01.pth) |
+|   DualDet    |  Swin-T  | FPN  |     1x      |   47.06 | [exp02](./nets/exp02.py) | [model](https://github.com/jahongir7174/DualDet/releases/download/v0.0.1/exp02.pth) |
 
 ### TODO
 
 * [x] [exp01](./nets/exp01.py), default [Faster R-CNN](https://arxiv.org/abs/1506.01497)
 * [x] [exp02](./nets/exp02.py), added [DualDet](https://arxiv.org/abs/2107.00420)
-* [x] [exp03](./nets/exp03.py), added [MOSAIC](https://arxiv.org/abs/2004.10934)
-  |  [MixUp](https://arxiv.org/abs/1710.09412)
 
 ### Reference
 
