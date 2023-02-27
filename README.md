@@ -20,7 +20,7 @@
 | Faster R-CNN |  Swin-T  | FPN  |     1x      |   42.86 | [exp01](./nets/exp01.py) | [model](https://github.com/jahongir7174/DualDet/releases/download/v0.0.1/exp01.pth) |
 |   DualDet    |  Swin-T  | FPN  |     1x      |   47.06 | [exp02](./nets/exp02.py) | [model](https://github.com/jahongir7174/DualDet/releases/download/v0.0.1/exp02.pth) |
 | Faster R-CNN |  Swin-T  | FPN  |     3x      |   45.31 | [exp03](./nets/exp03.py) | [model](https://github.com/jahongir7174/DualDet/releases/download/v0.0.1/exp03.pth) |
-|   DualDet    |  Swin-T  | FPN  |     3x      |       - | [exp04](./nets/exp04.py) |                                                                                   - |
+|   DualDet    |  Swin-T  | FPN  |     3x      |   49.09 | [exp04](./nets/exp04.py) | [model](https://github.com/jahongir7174/DualDet/releases/download/v0.0.1/exp04.pth) |
 
 ### Reference
 
